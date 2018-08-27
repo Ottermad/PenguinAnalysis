@@ -1,4 +1,6 @@
 click_data/
 *.pyc
-penguins.db
+*.db
 venv/
+*.db-journal
+.DS_Store

@@ -1,2 +1,3 @@
 """Main file to data analysis."""
-import db
+from app.dataimports import import_data
+import_data('click_data')
