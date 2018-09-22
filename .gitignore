@@ -2,5 +2,6 @@ click_data/
 *.pyc
 *.db
 venv/
+my-virtualenv/
 *.db-journal
 .DS_Store
