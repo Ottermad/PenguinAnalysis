@@ -25,7 +25,9 @@ def create_click(user_name, subject_zooniverse_id, lunar_phase, original_size_x,
 def import_data(path_to_csvs):
     """Read each csv file and adds to database."""
     list_of_filenames = os.listdir(path_to_csvs)
-
+    print(list_of_filenames)
+    length = len(list_of_filenames)
+    c = 0
     for filename in list_of_filenames:
         # Open file
         clicks = []
@@ -68,3 +70,5 @@ def import_data(path_to_csvs):
                         ImageClick.x,
                         ImageClick.y
                     ]).execute()
+            c += 1
+            print("Done {} out of {}".format(c, length))

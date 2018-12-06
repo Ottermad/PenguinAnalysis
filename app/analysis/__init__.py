@@ -1,17 +1,16 @@
 """Analyse data from database."""
-# Credit: Josh Hemann
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from collections import namedtuple
 from app.db.models import ImageClick
 from peewee import fn
+from sklearn.cluster import MeanShift
 
 def plot_bar():
     n_groups = 5
 
     means_men = (20, 35, 30, 35, 27)
-
 
     fig, ax = plt.subplots()
 
@@ -34,6 +33,7 @@ def plot_bar():
     fig.tight_layout()
     plt.show()
 
+
 def plot_number_of_clicks_per_image():
     query = ImageClick.select(ImageClick.path, fn.COUNT(ImageClick.id)).group_by(ImageClick.path).limit(10)
     results = query.tuples()
@@ -41,7 +41,6 @@ def plot_number_of_clicks_per_image():
     n_groups = len(results)
 
     means_men = [r[1] for r in results]
-
 
     fig, ax = plt.subplots()
 
@@ -62,4 +61,23 @@ def plot_number_of_clicks_per_image():
     ax.legend()
 
     fig.tight_layout()
+    plt.show()
+
+
+def scatter_test():
+    plt.plot([1, 2, 3], [1, 2, 3], 'bo')
+    plt.show()
+
+
+def plot_clicks_on_image(path="SPIGa/SPIGa2014b_000163.JPG"):
+    query = ImageClick.select().where(ImageClick.path == path)
+
+    results_x = np.array([r.x for r in query]).astype(np.float)
+    results_y = np.array([r.y for r in query]).astype(np.float)
+
+    coords = np.array([(r.x, r.y) for r in query]).astype(np.float)
+    clustering = MeanShift(bandwidth=30).fit(coords)
+    centres = clustering.cluster_centers_
+    plt.plot(results_x, results_y, 'bo')
+    plt.plot([r[0] for r in centres], [r[1] for r in centres], 'go')
     plt.show()
