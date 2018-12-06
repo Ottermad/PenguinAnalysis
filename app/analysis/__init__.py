@@ -3,6 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from app.db.models import ImageClick
 from sklearn.cluster import MeanShift
+from concurrent.futures import ProcessPoolExecutor
+from functools import partial
+from time import time
 
 
 def main_analysis():
@@ -71,22 +74,30 @@ def main_analysis():
         data[0]["image_path"]
     )
 
-    percent_diff_away = []
+    # percent_diff_away = []
+
+    p_image = partial(process_image, bandwidth)
+
+    ts = time()
+    with ProcessPoolExecutor() as executor:
+        executor.map(p_image, data[1:])
+    print('Took %s', time() - ts)
 
     # Select other images and generate output
-    for image in data[1:]:
-        coords = get_coords_tuple(image["image_path"])
-        # print(image)
-        # print(coords)
-        image["number_of_clusters"] = find_number_of_clusters(
-            bandwidth, coords)
-        percent_diff_away.append(
-            (image["number_of_clusters"] - image["penguin_number"]) /
-            (image["penguin_number"])
-        )
 
     # Compare images with expected number of clusters.
-    print(sum(percent_diff_away) / len(percent_diff_away))
+    # print(sum(percent_diff_away) / len(percent_diff_away))
+
+
+def process_image(bandwidth, image):
+    coords = get_coords_tuple(image["image_path"])
+    image["number_of_clusters"] = find_number_of_clusters(
+        bandwidth, coords)
+    percent_diff_away = (image["number_of_clusters"] - image["penguin_number"]) \
+        / image["penguin_number"]
+    f = open(image["image_path"] + ".txt", "wb")
+    f.write(str(percent_diff_away))
+    f.close()
 
 
 def find_number_of_clusters(bandwidth, coords):
