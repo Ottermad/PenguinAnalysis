@@ -5,3 +5,5 @@ venv/
 my-virtualenv/
 *.db-journal
 .DS_Store
+Raw_images_SPIG/
+*.png
