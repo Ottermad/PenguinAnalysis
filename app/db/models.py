@@ -1,16 +1,11 @@
 """Connects to database and setups table."""
 from peewee import (
-    SqliteDatabase,
     Model,
     CharField,
     IntegerField,
-    PostgresqlDatabase,
 )
 from playhouse.pool import PooledPostgresqlExtDatabase
 
-
-# Timeout added to avoid lock errors when multithreading
-# db = SqliteDatabase("penguins.db", timeout=100000)
 db = PooledPostgresqlExtDatabase("penguin_db", max_connections=8)
 
 
