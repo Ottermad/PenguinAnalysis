@@ -4,10 +4,14 @@ from peewee import (
     Model,
     CharField,
     IntegerField,
+    PostgresqlDatabase,
 )
+from playhouse.pool import PooledPostgresqlExtDatabase
+
 
 # Timeout added to avoid lock errors when multithreading
-db = SqliteDatabase("penguins.db", timeout=100000)
+# db = SqliteDatabase("penguins.db", timeout=100000)
+db = PooledPostgresqlExtDatabase("penguin_db", max_connections=8)
 
 
 class ImageClick(Model):
@@ -38,6 +42,7 @@ class ImageClick(Model):
 class RowAccuracy(Model):
     """Represent result of algorithm."""
 
+    run_id = IntegerField()
     image = CharField()
     algorithm = CharField()
     number_of_clusters = IntegerField()

@@ -1,13 +1,13 @@
 """Analyse data from database."""
 import numpy as np
 import matplotlib.pyplot as plt
-from app.db.models import ImageClick, RowAccuracy
+from app.db.models import ImageClick, RowAccuracy, db
 from sklearn.cluster import MeanShift
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 
 
-def main_analysis():
+def main_analysis(run_id):
     """Main Analysis."""
     data = [
         {
@@ -68,27 +68,44 @@ def main_analysis():
     ]
 
     # Find a value from b based upon an image.
-    # number_of_clusters, bandwidth = find_value_for_b(
-    #     data[0]["penguin_number"],
-    #     data[0]["image_path"]
-    # )
+    number_of_clusters, bandwidth = find_value_for_b(
+        data[0]["penguin_number"],
+        data[0]["image_path"]
+    )
 
     # Select other images and generate output
-    process_image = partial(generate_row_accuracy, 28)
+    # process_image = partial(generate_row_accuracy, 28, run_id)
 
-    d = iter(data)
+    # d = iter(data)
 
-    with ProcessPoolExecutor() as executor:
-        executor.map(process_image, d)
+    # with ProcessPoolExecutor() as executor:
+    #     future = executor.map(process_image, d)
+
+    #     while True:
+    #         try:
+    #             future.__next__()
+    #         except StopIteration:
+    #             break
+
+    for image in data:
+        generate_row_accuracy(bandwidth, run_id, image)
 
     # Compare images with expected number of clusters.
+    rows = RowAccuracy.select().where(RowAccuracy.run_id == run_id)
+    percentage_error = sum([
+        (row.number_of_clusters - row.expected_number_of_clusters) /
+        row.expected_number_of_clusters for row in rows
+    ]) / len(rows)
+    print("{}% percentage error".format(percentage_error * 100))
 
 
-def generate_row_accuracy(bandwidth, image):
+def generate_row_accuracy(bandwidth, run_id, image):
+    """Assess how accurate an image is."""
     coords = get_coords_tuple(image["image_path"])
     image["number_of_clusters"] = find_number_of_clusters(
         bandwidth, coords)
     ra = RowAccuracy(
+        run_id=run_id,
         algorithm="MeanShift",
         image=image["image_path"],
         number_of_clusters=image["number_of_clusters"],

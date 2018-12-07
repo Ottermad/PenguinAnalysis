@@ -28,6 +28,7 @@ def import_data(path_to_csvs):
     print(list_of_filenames)
     length = len(list_of_filenames)
     c = 0
+    list_of_filenames = ["SPIGa2014a_metadata.csv", "SPIGa2014b_metadata.csv"]
     for filename in list_of_filenames:
         # Open file
         clicks = []
