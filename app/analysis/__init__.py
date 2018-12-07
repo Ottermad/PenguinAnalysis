@@ -3,8 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from app.db.models import ImageClick, RowAccuracy, db
 from sklearn.cluster import MeanShift, DBSCAN
-from concurrent.futures import ProcessPoolExecutor
-from functools import partial
+# from concurrent.futures import ProcessPoolExecutor
+# from functools import partial
 
 
 def main_analysis(run_id):
@@ -68,7 +68,12 @@ def main_analysis(run_id):
     ]
 
     # Find a value from b based upon an image.
-    number_of_clusters, bandwidth = find_value_for_b(
+    _, bandwidth = find_value_for_b(
+        data[0]["penguin_number"],
+        data[0]["image_path"]
+    )
+
+    _, eps = find_value_for_eps(
         data[0]["penguin_number"],
         data[0]["image_path"]
     )
@@ -88,7 +93,7 @@ def main_analysis(run_id):
     #             break
 
     for image in data:
-        generate_row_accuracy(bandwidth, run_id, image)
+        generate_row_accuracy(bandwidth, run_id, image, eps)
 
     # Compare images with expected number of clusters.
     rows = RowAccuracy.select().where(
@@ -112,12 +117,12 @@ def main_analysis(run_id):
     print("{}% percentage error".format(percentage_error * 100))
 
 
-def generate_row_accuracy(bandwidth, run_id, image):
+def generate_row_accuracy(bandwidth, run_id, image, eps):
     """Assess how accurate an image is."""
     coords = get_coords_tuple(image["image_path"])
     image["number_of_clusters"] = find_number_of_clusters(
         bandwidth, coords)
-    image["number_of_dbscan_clusters"] = find_number_of_clusters_dbscan(coords)
+    image["number_of_dbscan_clusters"] = find_number_of_clusters_dbscan(eps, coords)
     ra = RowAccuracy(
         run_id=run_id,
         algorithm="MeanShift",
@@ -143,9 +148,9 @@ def find_number_of_clusters(bandwidth, coords):
     return len(centres)
 
 
-def find_number_of_clusters_dbscan(coords):
+def find_number_of_clusters_dbscan(eps, coords):
     """Use DBSCAN to form clusters."""
-    clustering = DBSCAN(eps=20, min_samples=2).fit(coords)
+    clustering = DBSCAN(eps=eps, min_samples=2).fit(coords)
     labels = clustering.labels_
 
     # Number of clusters in labels, ignoring noise if present.
@@ -208,7 +213,7 @@ def get_coords_tuple(path):
     return coords
 
 
-def plot_clicks_on_image(path, image_file_path):
+def plot_meanshift_clicks_on_image(path, image_file_path):
     """Plot clicks onto image."""
     query = ImageClick.select().where(ImageClick.path == path)
 
@@ -227,3 +232,87 @@ def plot_clicks_on_image(path, image_file_path):
     ax.plot(results_x, results_y, 'bo')
     ax.plot([r[0] for r in centres], [r[1] for r in centres], 'go')
     fig.savefig('test3.png', dpi=400)
+
+
+def plot_dbscan_clicks_on_image(path, image_file_path):
+    """Plot clicks onto image."""
+    query = ImageClick.select().where(ImageClick.path == path)
+
+    results_x = np.array([r.x for r in query]).astype(np.float)
+    results_y = [-y for y in np.array([r.y for r in query]).astype(np.float)]
+
+    coords = np.array([(r[0], r[1]) for r in zip(results_x, results_y)])
+    clustering = DBSCAN(eps=3, min_samples=2).fit(coords)
+    number_of_clusters = np.amax(clustering.labels_)
+    clusters = [[] for x in range(0, number_of_clusters)]
+    for x in range(0, len(clustering.labels_)):
+        point = clustering.labels_[x]
+        try:
+            clusters[point].append(coords[x])
+        except:
+            print(point)
+
+    centres = []
+    for cluster in clusters:
+        x = sum([r[0] for r in cluster]) / len(cluster)
+        y = sum([r[1] for r in cluster]) / len(cluster)
+        centres.append((x, y))
+
+    img = plt.imread(image_file_path)
+    fig, ax = plt.subplots()
+    ax.imshow(img, extent=[0, 1000, -800, 0])
+
+    ax.plot(results_x, results_y, 'bo')
+    ax.plot([r[0] for r in centres], [r[1] for r in centres], 'go')
+    fig.savefig('test13.png', dpi=400)
+
+
+def eps_against_num_of_clusters(path):
+    coords = get_coords_tuple(path)
+
+    for eps in range(1, 50, 5):
+        number_of_clusters = find_number_of_clusters_dbscan(eps, coords)
+        print("EPS: {} CLUSTERS: {}".format(eps, number_of_clusters))
+
+
+def find_within_interval_eps(
+    desired_number_of_clusters,
+    interval,
+    starting_eps,
+    coords
+):
+    """Find value of b to get within a interval - start eps about 5."""
+    eps = starting_eps
+    number_of_clusters = find_number_of_clusters_dbscan(eps, coords)
+
+    prev_op_increased = None
+
+    while True:
+        if number_of_clusters > desired_number_of_clusters + interval:
+            if prev_op_increased is not None and prev_op_increased is False:
+                break
+            prev_op_increased = True
+            eps += interval
+        elif number_of_clusters < desired_number_of_clusters - interval:
+            if prev_op_increased is not None and prev_op_increased is True:
+                break
+            prev_op_increased = False
+            eps -= interval
+            if eps <= 0:
+                eps += interval
+                break
+        else:
+            break
+        number_of_clusters = find_number_of_clusters_dbscan(eps, coords)
+    return eps, number_of_clusters
+
+
+def find_value_for_eps(cluster_num, path):
+    """Find a value of bandwidth for an image given number of penguins."""
+    coords = get_coords_tuple(path)
+
+    eps, number_of_clusters = find_within_interval_eps(cluster_num, 5, 5, coords)
+    eps, number_of_clusters = find_within_interval_eps(cluster_num, 1, eps, coords)
+    # TODO: Confirm and fix behaviour when interval = 0
+
+    return number_of_clusters, eps
