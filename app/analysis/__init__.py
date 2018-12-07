@@ -1,10 +1,8 @@
 """Analyse data from database."""
 import numpy as np
 import matplotlib.pyplot as plt
-from app.db.models import ImageClick, RowAccuracy, db
+from app.db.models import ImageClick, RowAccuracy
 from sklearn.cluster import MeanShift, DBSCAN
-# from concurrent.futures import ProcessPoolExecutor
-# from functools import partial
 
 
 def main_analysis(run_id):
@@ -79,19 +77,6 @@ def main_analysis(run_id):
     )
 
     # Select other images and generate output
-    # process_image = partial(generate_row_accuracy, 28, run_id)
-
-    # d = iter(data)
-
-    # with ProcessPoolExecutor() as executor:
-    #     future = executor.map(process_image, d)
-
-    #     while True:
-    #         try:
-    #             future.__next__()
-    #         except StopIteration:
-    #             break
-
     for image in data:
         generate_row_accuracy(bandwidth, run_id, image, eps)
 
@@ -122,7 +107,8 @@ def generate_row_accuracy(bandwidth, run_id, image, eps):
     coords = get_coords_tuple(image["image_path"])
     image["number_of_clusters"] = find_number_of_clusters(
         bandwidth, coords)
-    image["number_of_dbscan_clusters"] = find_number_of_clusters_dbscan(eps, coords)
+    image["number_of_dbscan_clusters"] = find_number_of_clusters_dbscan(
+        eps, coords)
     ra = RowAccuracy(
         run_id=run_id,
         algorithm="MeanShift",
@@ -268,6 +254,7 @@ def plot_dbscan_clicks_on_image(path, image_file_path):
 
 
 def eps_against_num_of_clusters(path):
+    """Output eps values and the number of clusters for a given image."""
     coords = get_coords_tuple(path)
 
     for eps in range(1, 50, 5):
@@ -311,8 +298,10 @@ def find_value_for_eps(cluster_num, path):
     """Find a value of bandwidth for an image given number of penguins."""
     coords = get_coords_tuple(path)
 
-    eps, number_of_clusters = find_within_interval_eps(cluster_num, 5, 5, coords)
-    eps, number_of_clusters = find_within_interval_eps(cluster_num, 1, eps, coords)
+    eps, number_of_clusters = find_within_interval_eps(
+        cluster_num, 5, 5, coords)
+    eps, number_of_clusters = find_within_interval_eps(
+        cluster_num, 1, eps, coords)
     # TODO: Confirm and fix behaviour when interval = 0
 
     return number_of_clusters, eps
