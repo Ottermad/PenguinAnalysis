@@ -2,7 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from app.db.models import ImageClick, RowAccuracy, db
-from sklearn.cluster import MeanShift
+from sklearn.cluster import MeanShift, DBSCAN
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 
@@ -91,11 +91,24 @@ def main_analysis(run_id):
         generate_row_accuracy(bandwidth, run_id, image)
 
     # Compare images with expected number of clusters.
-    rows = RowAccuracy.select().where(RowAccuracy.run_id == run_id)
+    rows = RowAccuracy.select().where(
+        (RowAccuracy.run_id == run_id) & (RowAccuracy.algorithm == "MeanShift")
+    )
     percentage_error = sum([
         (row.number_of_clusters - row.expected_number_of_clusters) /
         row.expected_number_of_clusters for row in rows
     ]) / len(rows)
+
+    print("{}% percentage error".format(percentage_error * 100))
+
+    rows = RowAccuracy.select().where(
+        (RowAccuracy.run_id == run_id) & (RowAccuracy.algorithm == "DBSCAN")
+    )
+    percentage_error = sum([
+        (row.number_of_clusters - row.expected_number_of_clusters) /
+        row.expected_number_of_clusters for row in rows
+    ]) / len(rows)
+
     print("{}% percentage error".format(percentage_error * 100))
 
 
@@ -104,6 +117,7 @@ def generate_row_accuracy(bandwidth, run_id, image):
     coords = get_coords_tuple(image["image_path"])
     image["number_of_clusters"] = find_number_of_clusters(
         bandwidth, coords)
+    image["number_of_dbscan_clusters"] = find_number_of_clusters_dbscan(coords)
     ra = RowAccuracy(
         run_id=run_id,
         algorithm="MeanShift",
@@ -112,6 +126,14 @@ def generate_row_accuracy(bandwidth, run_id, image):
         expected_number_of_clusters=image["penguin_number"]
     )
     ra.save()
+    ra2 = RowAccuracy(
+        run_id=run_id,
+        algorithm="DBSCAN",
+        image=image["image_path"],
+        number_of_clusters=image["number_of_dbscan_clusters"],
+        expected_number_of_clusters=image["penguin_number"]
+    )
+    ra2.save()
 
 
 def find_number_of_clusters(bandwidth, coords):
@@ -119,6 +141,16 @@ def find_number_of_clusters(bandwidth, coords):
     clustering = MeanShift(bandwidth=bandwidth).fit(coords)
     centres = clustering.cluster_centers_
     return len(centres)
+
+
+def find_number_of_clusters_dbscan(coords):
+    """Use DBSCAN to form clusters."""
+    clustering = DBSCAN(eps=20, min_samples=2).fit(coords)
+    labels = clustering.labels_
+
+    # Number of clusters in labels, ignoring noise if present.
+    n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
+    return n_clusters
 
 
 def find_within_interval(
