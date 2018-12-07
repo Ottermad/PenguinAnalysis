@@ -1,3 +1,4 @@
 """Main file to data analysis."""
-from app.analysis import main_analysis
-main_analysis()
+from app.analysis import speed_comparison, accuracy_comparison
+speed_comparison()
+accuracy_comparison()

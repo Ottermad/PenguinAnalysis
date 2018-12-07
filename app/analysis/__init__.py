@@ -1,4 +1,5 @@
 """Analyse data from database."""
+import time
 import uuid
 from functools import partial
 from app.db.models import RowAccuracy
@@ -65,7 +66,7 @@ data = [
 ]
 
 
-def main_analysis():
+def accuracy_comparison():
     """Main Analysis."""
     run_id = uuid.uuid4()
 
@@ -92,25 +93,17 @@ def main_analysis():
             number_of_meanshift_clusters, run_id, image, "MeanShift")
 
     # Compare images with expected number of clusters.
-    rows = RowAccuracy.select().where(
-        (RowAccuracy.run_id == run_id) & (RowAccuracy.algorithm == "MeanShift")
-    )
-    percentage_error = sum([
-        (row.number_of_clusters - row.expected_number_of_clusters) /
-        row.expected_number_of_clusters for row in rows
-    ]) / len(rows)
 
-    print("{}% percentage error".format(percentage_error * 100))
+    for a in ["DBSCAN", "MeanShift"]:
+        rows = RowAccuracy.select().where(
+            (RowAccuracy.run_id == run_id) & (RowAccuracy.algorithm == a)
+        )
+        percentage_error = sum([
+            (row.number_of_clusters - row.expected_number_of_clusters) /
+            row.expected_number_of_clusters for row in rows
+        ]) / len(rows)
 
-    rows = RowAccuracy.select().where(
-        (RowAccuracy.run_id == run_id) & (RowAccuracy.algorithm == "DBSCAN")
-    )
-    percentage_error = sum([
-        (row.number_of_clusters - row.expected_number_of_clusters) /
-        row.expected_number_of_clusters for row in rows
-    ]) / len(rows)
-
-    print("{}% percentage error".format(percentage_error * 100))
+        print("{}: {}% percentage error".format(a, percentage_error * 100))
 
 
 def generate_row_accuracy(number_of_clusters_func, run_id, image, algorithm):
@@ -125,3 +118,26 @@ def generate_row_accuracy(number_of_clusters_func, run_id, image, algorithm):
         expected_number_of_clusters=image["penguin_number"]
     )
     ra.save()
+
+
+def speed_comparison():
+    """Compare the speed of clustering algorithms."""
+    coords = [get_coords_tuple(image["image_path"]) for image in data]
+
+    algorithms = [
+        {
+            "name": "DBSCAN",
+            "func": partial(find_number_of_clusters_dbscan, 20)
+        },
+        {
+            "name": "MeanShift",
+            "func": partial(find_number_of_clusters, 30)
+        }
+    ]
+
+    for a in algorithms:
+        start = time.time()
+        for coord in coords:
+            a["func"](coord)
+        end = time.time()
+        print("{}: Took {}s".format(a["name"], end - start))
