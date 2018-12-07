@@ -1,4 +1,5 @@
 """Analyse data from database."""
+import uuid
 from functools import partial
 from app.db.models import RowAccuracy
 from .meanshift import find_number_of_clusters, find_value_for_b
@@ -64,8 +65,10 @@ data = [
 ]
 
 
-def main_analysis(run_id):
+def main_analysis():
     """Main Analysis."""
+    run_id = uuid.uuid4()
+
     # Find a value for b based upon an image.
     _, bandwidth = find_value_for_b(
         data[0]["penguin_number"],

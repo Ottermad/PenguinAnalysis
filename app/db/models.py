@@ -3,6 +3,7 @@ from peewee import (
     Model,
     CharField,
     IntegerField,
+    UUIDField,
 )
 from playhouse.pool import PooledPostgresqlExtDatabase
 
@@ -37,7 +38,7 @@ class ImageClick(Model):
 class RowAccuracy(Model):
     """Represent result of algorithm."""
 
-    run_id = IntegerField()
+    run_id = UUIDField()
     image = CharField()
     algorithm = CharField()
     number_of_clusters = IntegerField()
