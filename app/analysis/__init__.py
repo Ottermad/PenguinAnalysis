@@ -116,7 +116,7 @@ def generate_row_accuracy(number_of_clusters_func, run_id, image, algorithm):
     number_of_clusters = number_of_clusters_func(coords)
     ra = RowAccuracy(
         run_id=run_id,
-        algorithm="MeanShift",
+        algorithm=algorithm,
         image=image["image_path"],
         number_of_clusters=number_of_clusters,
         expected_number_of_clusters=image["penguin_number"]
