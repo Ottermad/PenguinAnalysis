@@ -2,7 +2,24 @@
 import os
 from app.db.models import ImageClick, db
 
-def create_click(user_name, subject_zooniverse_id, lunar_phase, original_size_x, original_size_y, path, temperature_f, tmstamp, animals_present, all_marked, mark_order, value, x, y):
+
+def create_click(
+    user_name,
+    subject_zooniverse_id,
+    lunar_phase,
+    original_size_x,
+    original_size_y,
+    path,
+    temperature_f,
+    tmstamp,
+    animals_present,
+    all_marked,
+    mark_order,
+    value,
+    x,
+    y
+):
+    """Create ImageClick object."""
     click = ImageClick(
         user_name=user_name,
         subject_zooniverse_id=subject_zooniverse_id,
@@ -25,13 +42,10 @@ def create_click(user_name, subject_zooniverse_id, lunar_phase, original_size_x,
 def import_data(path_to_csvs):
     """Read each csv file and adds to database."""
     list_of_filenames = os.listdir(path_to_csvs)
-    print(list_of_filenames)
     length = len(list_of_filenames)
     c = 0
-    list_of_filenames = ["SPIGa2014a_metadata.csv", "SPIGa2014b_metadata.csv"]
     for filename in list_of_filenames:
         # Open file
-        clicks = []
         data_source = []
         with open(path_to_csvs + '/' + filename) as f:  # TODO: Refactor
             first_line = True
@@ -44,18 +58,9 @@ def import_data(path_to_csvs):
                 # Create db object
                 split_row = line.strip("\n").strip(" ").strip(",").split(",")
                 data_source.append(split_row)
-                # try:
-                #     # click = create_click(*split_row)
-                #     # clicks.append(click)
-                # except Exception as e:
-                #     print(e)
-                #     print(line)
-                #     print(line.strip("\n").strip(","))
-                #     print(split_row)
-                #     break
             with db.atomic():
                 for idx in range(0, len(data_source), 50):
-                    ImageClick.insert_many(data_source[idx:idx+50], fields=[
+                    ImageClick.insert_many(data_source[idx:idx + 50], fields=[
                         ImageClick.user_name,
                         ImageClick.subject_zooniverse_id,
                         ImageClick.lunar_phase,
