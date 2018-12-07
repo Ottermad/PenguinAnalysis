@@ -1,11 +1,10 @@
 """Analyse data from database."""
 import numpy as np
 import matplotlib.pyplot as plt
-from app.db.models import ImageClick
+from app.db.models import ImageClick, RowAccuracy
 from sklearn.cluster import MeanShift
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
-from time import time
 
 
 def main_analysis():
@@ -69,35 +68,33 @@ def main_analysis():
     ]
 
     # Find a value from b based upon an image.
-    number_of_clusters, bandwidth = find_value_for_b(
-        data[0]["penguin_number"],
-        data[0]["image_path"]
-    )
-
-    # percent_diff_away = []
-
-    p_image = partial(process_image, bandwidth)
-
-    ts = time()
-    with ProcessPoolExecutor() as executor:
-        executor.map(p_image, data[1:])
-    print('Took %s', time() - ts)
+    # number_of_clusters, bandwidth = find_value_for_b(
+    #     data[0]["penguin_number"],
+    #     data[0]["image_path"]
+    # )
 
     # Select other images and generate output
+    process_image = partial(generate_row_accuracy, 28)
+
+    d = iter(data)
+
+    with ProcessPoolExecutor() as executor:
+        executor.map(process_image, d)
 
     # Compare images with expected number of clusters.
-    # print(sum(percent_diff_away) / len(percent_diff_away))
 
 
-def process_image(bandwidth, image):
+def generate_row_accuracy(bandwidth, image):
     coords = get_coords_tuple(image["image_path"])
     image["number_of_clusters"] = find_number_of_clusters(
         bandwidth, coords)
-    percent_diff_away = (image["number_of_clusters"] - image["penguin_number"]) \
-        / image["penguin_number"]
-    f = open(image["image_path"] + ".txt", "wb")
-    f.write(str(percent_diff_away))
-    f.close()
+    ra = RowAccuracy(
+        algorithm="MeanShift",
+        image=image["image_path"],
+        number_of_clusters=image["number_of_clusters"],
+        expected_number_of_clusters=image["penguin_number"]
+    )
+    ra.save()
 
 
 def find_number_of_clusters(bandwidth, coords):

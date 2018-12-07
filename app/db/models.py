@@ -3,9 +3,11 @@ from peewee import (
     SqliteDatabase,
     Model,
     CharField,
+    IntegerField,
 )
 
-db = SqliteDatabase("penguins.db")
+# Timeout added to avoid lock errors when multithreading
+db = SqliteDatabase("penguins.db", timeout=100000)
 
 
 class ImageClick(Model):
@@ -33,6 +35,21 @@ class ImageClick(Model):
         table_name = "TBL_IMAGE_CLICK"
 
 
+class RowAccuracy(Model):
+    """Represent result of algorithm."""
+
+    image = CharField()
+    algorithm = CharField()
+    number_of_clusters = IntegerField()
+    expected_number_of_clusters = IntegerField()
+
+    class Meta:
+        """Provides peewee config."""
+
+        database = db
+        table_name = "TBL_ROW_ACCURACY"
+
+
 def create_tables():
     """Create database tables."""
-    db.create_tables([ImageClick])
+    db.create_tables([ImageClick, RowAccuracy])
