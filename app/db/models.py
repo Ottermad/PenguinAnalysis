@@ -4,10 +4,10 @@ from peewee import (
     CharField,
     IntegerField,
     UUIDField,
+    PostgresqlDatabase
 )
-from playhouse.pool import PooledPostgresqlExtDatabase
 
-db = PooledPostgresqlExtDatabase("penguin_db", max_connections=8)
+db = PostgresqlDatabase("penguin_db", port=5433)
 
 
 class ImageClick(Model):

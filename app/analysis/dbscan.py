@@ -2,7 +2,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.cluster import DBSCAN
-from app.db.models import ImageClick
 from .helper import get_coords_tuple
 
 
@@ -16,37 +15,21 @@ def find_number_of_clusters_dbscan(eps, coords):
     return n_clusters
 
 
-def plot_dbscan_clicks_on_image(path, image_file_path):
+def plot_dbscan_clicks_on_image(path, image_file_path, eps):
     """Plot clicks onto image."""
-    query = ImageClick.select().where(ImageClick.path == path)
+    coords = get_coords_tuple(path)
+    clustering = DBSCAN(eps=eps, min_samples=2).fit(coords)
 
-    results_x = np.array([r.x for r in query]).astype(np.float)
-    results_y = [-y for y in np.array([r.y for r in query]).astype(np.float)]
-
-    coords = np.array([(r[0], r[1]) for r in zip(results_x, results_y)])
-    clustering = DBSCAN(eps=3, min_samples=2).fit(coords)
-    number_of_clusters = np.amax(clustering.labels_)
-    clusters = [[] for x in range(0, number_of_clusters)]
-    for x in range(0, len(clustering.labels_)):
-        point = clustering.labels_[x]
-        try:
-            clusters[point].append(coords[x])
-        except:
-            print(point)
-
-    centres = []
-    for cluster in clusters:
-        x = sum([r[0] for r in cluster]) / len(cluster)
-        y = sum([r[1] for r in cluster]) / len(cluster)
-        centres.append((x, y))
+    centres = find_cluster_centres(clustering, coords)
+    print(len(centres))
 
     img = plt.imread(image_file_path)
     fig, ax = plt.subplots()
     ax.imshow(img, extent=[0, 1000, -800, 0])
 
-    ax.plot(results_x, results_y, 'bo')
+    ax.plot([c[0] for c in coords], [c[1] for c in coords], 'bo')
     ax.plot([r[0] for r in centres], [r[1] for r in centres], 'go')
-    fig.savefig('test13.png', dpi=400)
+    fig.savefig('test14.png', dpi=400)
 
 
 def eps_against_num_of_clusters(path):
