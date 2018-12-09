@@ -5,7 +5,11 @@ from functools import partial
 from app.db.models import RowAccuracy
 from .meanshift import find_number_of_clusters, find_value_for_b
 from .helper import get_coords_tuple
-from .dbscan import find_number_of_clusters_dbscan, find_value_for_eps
+from .dbscan import (
+    find_number_of_clusters_dbscan,
+    find_value_for_eps,
+    dbscan_and_cluster_centres,
+)
 
 data = [
     {
@@ -128,6 +132,10 @@ def speed_comparison():
         {
             "name": "DBSCAN",
             "func": partial(find_number_of_clusters_dbscan, 20)
+        },
+        {
+            "name": "DBSCAN + Cluster Centres",
+            "func": partial(dbscan_and_cluster_centres, 20)
         },
         {
             "name": "MeanShift",
