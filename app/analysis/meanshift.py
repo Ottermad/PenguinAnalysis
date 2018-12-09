@@ -53,22 +53,16 @@ def find_value_for_b(cluster_num, path):
     return number_of_clusters, b
 
 
-def plot_meanshift_clicks_on_image(path, image_file_path):
+def plot_meanshift_clicks_on_image(path, image_file_path, bandwidth):
     """Plot clicks onto image."""
-    query = ImageClick.select().where(ImageClick.path == path)
-
-    b = 28
-    results_x = np.array([r.x for r in query]).astype(np.float)
-    results_y = [-y for y in np.array([r.y for r in query]).astype(np.float)]
-
-    coords = np.array([(r[0], r[1]) for r in zip(results_x, results_y)])
-    clustering = MeanShift(bandwidth=b).fit(coords)
+    coords = get_coords_tuple(path)
+    clustering = MeanShift(bandwidth=bandwidth).fit(coords)
     centres = clustering.cluster_centers_
 
     img = plt.imread(image_file_path)
     fig, ax = plt.subplots()
     ax.imshow(img, extent=[0, 1000, -800, 0])
 
-    ax.plot(results_x, results_y, 'bo')
+    ax.plot([c[0] for c in coords], [c[1] for c in coords], 'bo')
     ax.plot([r[0] for r in centres], [r[1] for r in centres], 'go')
     fig.savefig('test3.png', dpi=400)

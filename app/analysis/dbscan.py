@@ -21,7 +21,6 @@ def plot_dbscan_clicks_on_image(path, image_file_path, eps):
     clustering = DBSCAN(eps=eps, min_samples=2).fit(coords)
 
     centres = find_cluster_centres(clustering, coords)
-    print(len(centres))
 
     img = plt.imread(image_file_path)
     fig, ax = plt.subplots()
