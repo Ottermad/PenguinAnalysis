@@ -102,12 +102,13 @@ def accuracy_comparison():
         rows = RowAccuracy.select().where(
             (RowAccuracy.run_id == run_id) & (RowAccuracy.algorithm == a)
         )
-        percentage_error = sum([
-            (row.number_of_clusters - row.expected_number_of_clusters) /
-            row.expected_number_of_clusters for row in rows
+        mean_num_of_clusters_away = sum([
+            abs(row.number_of_clusters - row.expected_number_of_clusters)
+            for row in rows
         ]) / len(rows)
 
-        print("{}: {}% percentage error".format(a, percentage_error * 100))
+        print("{}: {} mean number of clusters away".format(
+            a, mean_num_of_clusters_away))
 
 
 def generate_row_accuracy(number_of_clusters_func, run_id, image, algorithm):
