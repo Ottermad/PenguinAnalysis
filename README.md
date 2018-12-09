@@ -46,3 +46,21 @@ The MeanShift clustering algorithm depends on a parameter known as bandwidth (se
 In order to determine a value for this parameter two functions `find_value_for_b` and `find_value_for_eps` were implemented which both similar approaches. They start by taking an image with an known number of clusters/penguins, a set of clicks for that image and starting value for eps/bandwidth. They then run the clustering algorithm and then if the number of clusters is lower than the expected number then the value for eps/bandwidth is increased. This repeats until the number of clusters starts to decrease. At this point eps/bandwidth is set back to when it was increasing a smaller increment is added to it until it starts to decrease again. 
 
 To improve this process a mean could be taken after running this process over several images. 
+
+## Running the code locally
+I am using Python 3.5 and Postgres 11
+
+In order to run the code you will first need a Postgres database running. The default database name and port are penguin_db and 5433 (Note: this is different to the default postgres port due to local issues and will be resolved soon). These can be configured in `app/db/constants.py`
+
+To install the necessary python packages run:
+`pip install -r requirements.txt`
+
+Then to set up the schema run:
+`python create_tables.py`
+
+To import the data create a directory named `click_data` in the same directory as `app` and in place the csv you wish to work with. The csvs can be found (https://datadryad.org/resource/doi:10.5061/dryad.vv36g)[here] under PW Anonymised Raw Classifications and Metadata (update)
+Then run:
+`python import_data.py`
+
+You can then run the rest of code such as:
+`python speed_comparison.py`

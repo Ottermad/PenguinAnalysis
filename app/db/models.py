@@ -6,8 +6,9 @@ from peewee import (
     UUIDField,
     PostgresqlDatabase
 )
+from .constants import DATABASE_NAME, PORT
 
-db = PostgresqlDatabase("penguin_db", port=5433)
+db = PostgresqlDatabase(DATABASE_NAME, port=PORT)
 
 
 class ImageClick(Model):
